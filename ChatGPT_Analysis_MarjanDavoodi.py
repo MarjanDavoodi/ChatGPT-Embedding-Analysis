@@ -10,8 +10,6 @@ Date last modified: 1.2.2026
 
 ###################################
 
-#Import libraries:
-
 import openai
 from openai.embeddings_utils import get_embedding, cosine_similarity
 import pandas as pd
@@ -26,18 +24,16 @@ import word_lists #Compiles morality anchor words in dictionarities with pos and
 
 ###################################
 
-#Access OpenAI API:
+#Access OpenAI API
 openai.api_key= "OPENAI_API_KEY"
 
 
-# Read csv file that compiles a list of words representing diagnosis-label pairs and keywords for the five moral dimensions:
+# Read csv file that compiles a list of words representing diagnosis-label pairs and keywords for the five moral dimensions
 # (Source of moral dimensions anchor words: https://moralfoundations.org/wp-content/uploads/files/downloads/moral%20foundations%20dictionary.dic)
-
 words = pd.read_csv(r'~/ChatGPT/words.csv')
 
 
-# Function to extract word embeddings for the list of words:
-
+# Function to extract word embeddings for the list of words
 def get_embedding_with_na(word, engine='text-embedding-ada-002'):
     try:
         embedding = get_embedding(word, engine=engine)
@@ -46,16 +42,16 @@ def get_embedding_with_na(word, engine='text-embedding-ada-002'):
         return "NA"
 
 
-#Add embedding column for the words:
+#Add embedding column for the words
 words['embedding'] = words['word'].apply(lambda x: get_embedding_with_na(x, engine='text-embedding-ada-002'))
 
 
-# Save it to a csv file:
+# Save it to a csv file
 words.to_csv('word_embeddings_na.csv', index=False, na_rep='NA')
 
 
 
-#Read the word embeddings csv file:
+#Read the word embeddings csv file
 csv_embeddings = pd.read_csv('word_embeddings_na.csv')
 
 
@@ -102,8 +98,7 @@ class dimension_lexicon_builtin:
 
 
 
-# Create instances of the dimension_lexicon_builtin class for different moral dimensions:
-
+# Create instances of the dimension_lexicon_builtin class for different moral dimensions
 semantic_direction_purity = dimension_lexicon_builtin('purity', csv_embedding) 
 semantic_direction_harm = dimension_lexicon_builtin('harm', csv_embedding) 
 semantic_direction_ingroup = dimension_lexicon_builtin('ingroup', csv_embedding) 
@@ -188,14 +183,14 @@ class dimension:
 
 
 
-#Diagnosis and label word lists:
+#Diagnosis and label word lists
 diagnosis = ['schizophrenia', 'autism', 'alcoholism', 'addiction', 'psychopathy', 'narcissism'] 
 
 label = ['schizophrenic', 'autistic', 'alcoholic', 'addict', 'psychopath', 'narcissist']
 
 
 
-#Create an instance of the 'dimension' class for the purity dimension using the Larsen method:
+#Create an instance of the 'dimension' class for the purity dimension using the Larsen method
 larsen_purity_dir = dimension(semantic_direction_purity)
 
 # Calculate cosine similarity between the purity dimension vector and diagnosis keywords
@@ -205,56 +200,50 @@ purity_diagnosis = larsen_purity_dir.cos_sim(diagnosis)
 purity_label = larsen_purity_dir.cos_sim(label)
 
 
-#Harm dimension:
-
+#Harm dimension
 larsen_harm_dir = dimension(semantic_direction_harm)
 harm_diagnosis = larsen_harm_dir.cos_sim(diagnosis)
 harm_label = larsen_harm_dir.cos_sim(label)
 
 
-#In-group dimension:
-
+#In-group dimension
 larsen_ingroup_dir = dimension(semantic_direction_ingroup)
 ingroup_diagnosis = larsen_ingroup_dir.cos_sim(diagnosis)
 ingroup_label = larsen_ingroup_dir.cos_sim(label)
 
 
-#Fairness dimension:
-
+#Fairness dimension
 larsen_fairness_dir = dimension(semantic_direction_fairness)
 fairness_diagnosis = larsen_fairness_dir.cos_sim(diagnosis)
 fairness_label = larsen_fairness_dir.cos_sim(label)
 
 
-#Authority dimension:
-
+#Authority dimension
 larsen_authority_dir = dimension(semantic_direction_authority)
 authority_diagnosis = larsen_authority_dir.cos_sim(diagnosis)
 authority_label = larsen_authority_dir.cos_sim(label)
 
 
 
-#Merge all diagnosis dimensions:
-
+#Merge all diagnosis dimensions
 diagnosis_cos = [a + b[1:]+ c[1:] + d[1:] + e[1:] for a in purity_diagnosis for b in harm_diagnosis for c in ingroup_diagnosis for d in fairness_diagnosis for e in authority_diagnosis if a[0] == b[0] == c[0] == d[0] == e[0]]
 diagnosis = pd.DataFrame(diagnosis_cos, columns = ['word', 'purity', 'harm', 'ingroup', 'fairness', 'authority'])
 diagnosis.to_csv('dimensions/diagnosis_cos.8.14.23.csv')
 
 
-#Merge all label dimensions:
-
+#Merge all label dimensions
 diagnosed_cos = [a + b[1:]+ c[1:] + d[1:] + e[1:] for a in purity_label for b in harm_label for c in ingroup_label for d in fairness_label for e in authority_label if a[0] == b[0] == c[0] == d[0] == e[0]]
 label = pd.DataFrame(diagnosed_cos, columns = ['word', 'purity', 'harm', 'ingroup', 'fairness', 'authority'])
 label.to_csv('dimensions/labels_cos.8.14.23.csv')
 
 
-#Read the cosine similarities file for the merged diagnosis and label pairs:
+#Read the cosine similarities file for the merged diagnosis and label pairs
 diagnosis_label_cos = pd.read_csv('dimensions/merged_cos.8.14.23.csv')
 
 
-#Make dodged bar plots from the projected diagnosis-label pairs on the authority moral dimension driven from GPT-3 model:
+#Make dodged bar plots from the projected diagnosis-label pairs on the authority moral dimension driven from GPT-3 model
 
-#Customize font type and size:
+#Customize font type and size
 plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = ['Helvetica']
 plt.rcParams['font.size'] = 14
@@ -309,7 +298,7 @@ ax.text(0.5, -0.15, subtitle_text, transform=ax.transAxes, va='center', ha='cent
 # Adjust the bottom margin to prevent cutting off the subtitle
 plt.subplots_adjust(bottom=0.2)
 
-# Save the plot as a high-quality pdf file:
+# Save the plot as a high-quality pdf file
 plt.savefig('Authority.pdf', format='pdf', bbox_inches='tight')
 
 plt.tight_layout()
